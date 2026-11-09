@@ -9,10 +9,10 @@ class Shipment extends BaseModel {
     public function getAll() {
         return $this->fetchAll(
             "SELECT sp.*, sh.name AS ship_name, c.name AS cargo_name
-             FROM shipments sp
-             JOIN ships sh ON sp.ship_id = sh.id
-             JOIN cargos c ON sp.cargo_id = c.id
-             ORDER BY sp.shipment_date DESC, sp.id DESC"
+            FROM shipments sp
+            JOIN ships sh ON sp.ship_id = sh.id
+            JOIN cargos c ON sp.cargo_id = c.id
+            ORDER BY sp.shipment_date DESC, sp.id DESC"
         );
     }
 
@@ -27,7 +27,7 @@ class Shipment extends BaseModel {
         }
         return $this->execute(
             "INSERT INTO shipments (ship_id, cargo_id, type, origin_port, destination_port, quantity_ton, shipment_date, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 $data['ship_id'], $data['cargo_id'], $data['type'], $data['origin'],
                 $data['destination'], $data['quantity'], $data['date'], $data['status']
@@ -47,9 +47,9 @@ class Shipment extends BaseModel {
         }
         return $this->execute(
             "UPDATE shipments
-             SET ship_id = ?, cargo_id = ?, type = ?, origin_port = ?, destination_port = ?,
-                 quantity_ton = ?, shipment_date = ?, status = ?
-             WHERE id = ?",
+            SET ship_id = ?, cargo_id = ?, type = ?, origin_port = ?, destination_port = ?,
+                quantity_ton = ?, shipment_date = ?, status = ?
+            WHERE id = ?",
             [
                 $data['ship_id'], $data['cargo_id'], $data['type'], $data['origin'],
                 $data['destination'], $data['quantity'], $data['date'], $data['status'], $id
