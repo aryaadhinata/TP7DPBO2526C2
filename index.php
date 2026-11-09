@@ -111,6 +111,7 @@ if ($page !== 'home' && $action === 'edit' && $_SERVER['REQUEST_METHOD'] === 'GE
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="icon.png" type="image/png">
     <title>Sistem Ekspor Impor Pelabuhan Internasional</title>
     <link rel="stylesheet" href="style.css">
 </head>
