@@ -1,3 +1,4 @@
 <header>
-    <h1>Library Management System</h1>
+    <h1>Sistem Ekspor Impor Pelabuhan Internasional</h1>
+    <p>Manajemen kapal, barang, dan transaksi pengiriman</p>
 </header>

@@ -1,3 +1,3 @@
 <footer>
-    <p>&copy; 2026 Library System</p>
+    <p>&copy; 2026 Sistem Ekspor Impor Pelabuhan Internasional</p>
 </footer>
