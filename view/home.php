@@ -1,3 +1,4 @@
+<?php /** @var array<string, int> $summary */ ?>
 <h2>Selamat Datang</h2>
 <p>Aplikasi ini mencatat aktivitas ekspor dan impor di pelabuhan internasional.</p>
 <section class="summary-grid" aria-label="Ringkasan data">

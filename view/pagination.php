@@ -1,5 +1,6 @@
 <?php
-/** Variabel: $slug, $pagination ['page', 'pages', 'total'] */
+/** @var string $slug */
+/** @var array{page: int, pages: int, total: int} $pagination */
 if ($pagination['pages'] > 1): ?>
 <div class="pagination" role="navigation" aria-label="Halaman data">
     <?php for ($i = 1; $i <= $pagination['pages']; $i++): ?>

@@ -1,8 +1,9 @@
 <?php
-/**
- * Tabel data generik.
- * Variabel: $slug, $rows (entity), $columns [label => fn(entity) => nilai], $deleteConfirm
- */
+/** @var string $slug */
+/** @var BaseEntity[] $rows */
+/** @var array<string, Closure(BaseEntity): mixed> $columns */
+/** @var string $deleteConfirm */
+/** @var string|null $tableClass */
 ?>
 <div class="table-scroll<?= !empty($tableClass) ? ' ' . e($tableClass) : '' ?>">
 <table>
