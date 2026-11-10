@@ -2,6 +2,7 @@
 require_once __DIR__ . '/BaseModel.php';
 require_once __DIR__ . '/CargoEntity.php';
 
+/** Akses CRUD barang; data hasil query dipetakan menjadi CargoEntity. */
 class Cargo extends BaseModel {
     protected array $uniqueLabels = ['hs_code' => 'Kode HS'];
     protected string $inUseMessage = 'Barang tidak dapat dihapus karena sudah dipakai pada transaksi.';

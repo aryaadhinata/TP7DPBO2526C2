@@ -5,6 +5,7 @@ require_once __DIR__ . '/Port.php';
 require_once __DIR__ . '/Ship.php';
 require_once __DIR__ . '/Shipment.php';
 
+/** Menghubungkan route kapal dengan model, entity, dan view yang sesuai. */
 class ShipController extends BaseController {
     public function __construct() { $this->model = new Ship(); }
     protected function slug(): string { return 'ships'; }
@@ -13,6 +14,7 @@ class ShipController extends BaseController {
     protected function entityFromInput(array $input): BaseEntity { return ShipEntity::fromArray($input); }
 }
 
+/** Menghubungkan route barang dengan model, entity, dan view yang sesuai. */
 class CargoController extends BaseController {
     public function __construct() { $this->model = new Cargo(); }
     protected function slug(): string { return 'cargos'; }
@@ -21,6 +23,7 @@ class CargoController extends BaseController {
     protected function entityFromInput(array $input): BaseEntity { return CargoEntity::fromArray($input); }
 }
 
+/** Menghubungkan route pelabuhan dengan model, entity, dan view yang sesuai. */
 class PortController extends BaseController {
     public function __construct() { $this->model = new Port(); }
     protected function slug(): string { return 'ports'; }
@@ -29,6 +32,7 @@ class PortController extends BaseController {
     protected function entityFromInput(array $input): BaseEntity { return PortEntity::fromArray($input); }
 }
 
+/** Menangani transaksi dan menyiapkan pilihan dropdown untuk form-nya. */
 class ShipmentController extends BaseController {
     private Shipment $shipmentModel;
 
@@ -48,6 +52,7 @@ class ShipmentController extends BaseController {
         return ShipmentEntity::fromArray($input);
     }
 
+    /** Label pilihan dibuat di controller agar view hanya bertugas menampilkan. */
     protected function extraViewData(): array {
         $ships = $cargos = $ports = [];
         foreach ((new Ship())->getOptions() as $ship) {

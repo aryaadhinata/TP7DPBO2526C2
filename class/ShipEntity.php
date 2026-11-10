@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/BaseEntity.php';
 
+/** Data kapal dan validasi format; aturan muatan transaksi berada di model Ship. */
 class ShipEntity extends BaseEntity {
     const MAX_CAPACITY_TEU = 100000;
     /** Asumsi konversi satuan: kapasitas dalam TEU, muatan dalam ton (maks. bobot kotor per TEU). */

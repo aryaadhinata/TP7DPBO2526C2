@@ -35,7 +35,7 @@
             <td class="table-actions">
                 <a class="btn btn-warning" href="?page=<?= e($slug) ?>&amp;action=edit&amp;id=<?= e($row->getId()) ?>#<?= e($slug) ?>-form">Ubah</a>
                 <form method="POST" action="index.php?page=<?= e($slug) ?>" class="inline-form"
-                      onsubmit="return confirm('<?= e($deleteConfirm) ?>');">
+                    onsubmit="return confirm('<?= e($deleteConfirm) ?>');">
                     <?= csrf_field() ?>
                     <input type="hidden" name="op" value="delete">
                     <input type="hidden" name="id" value="<?= e($row->getId()) ?>">

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/BaseEntity.php';
 
+/** Menyimpan data barang dan memvalidasi format nama, kode HS, serta kategori. */
 class CargoEntity extends BaseEntity {
     private string $name = '';
     private string $hsCode = '';

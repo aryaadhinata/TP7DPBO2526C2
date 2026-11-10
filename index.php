@@ -16,6 +16,7 @@ $routes = [
     'shipments' => ShipmentController::class,
 ];
 
+// Hanya slug di allowlist yang boleh memilih controller.
 $page = is_string($_GET['page'] ?? null) && isset($routes[$_GET['page']]) ? $_GET['page'] : 'home';
 
 $flashMessages = [
@@ -30,6 +31,7 @@ $viewFile = 'home';
 $data = [];
 try {
     if ($page === 'home') {
+        // Beranda hanya membaca angka ringkasan; halaman CRUD ditangani controller.
         require_once __DIR__ . '/class/Ship.php';
         require_once __DIR__ . '/class/Cargo.php';
         require_once __DIR__ . '/class/Shipment.php';

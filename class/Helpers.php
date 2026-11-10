@@ -7,6 +7,7 @@ function e($value): string {
 }
 
 // ---------- CSRF ----------
+// Gunakan satu token acak per sesi supaya semua form dalam sesi dapat diverifikasi.
 function csrf_token(): string {
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -29,12 +30,14 @@ function redirect(string $url): void {
 }
 
 // ---------- View ----------
+// EXTR_SKIP mencegah data view menimpa variabel lokal saat template disertakan.
 function render_view(string $file, array $vars = []): void {
     extract($vars, EXTR_SKIP);
     include dirname(__DIR__) . '/view/' . $file . '.php';
 }
 
 // ---------- Elemen form (menghapus duplikasi di tiap view) ----------
+// Escape nama atribut dan nilainya sebelum membentuk markup HTML.
 function html_attrs(array $attrs): string {
     $out = '';
     foreach ($attrs as $name => $value) {
@@ -67,7 +70,7 @@ function input_field(string $name, string $label, $value, array $attrs = [], str
     return '<label for="' . e($name) . '">' . e($label) . '</label><input' . html_attrs($attrs) . '>';
 }
 
-/** $options = [nilai => label] */
+/** Membuat select dari pasangan [nilai => label], dengan nilai terpilih dan placeholder opsional. */
 function select_field(string $name, string $label, array $options, $selected, string $placeholder = ''): string {
     $html = '<label for="' . e($name) . '">' . e($label) . '</label>';
     $html .= '<select id="' . e($name) . '" name="' . e($name) . '" required>';

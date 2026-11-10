@@ -1,3 +1,4 @@
+/* Warna dasar dipusatkan di sini agar mudah disesuaikan. */
 :root {
     --ink: #20383b;
     --muted: #647779;
@@ -24,6 +25,7 @@ body {
     font: 16px/1.55 "Segoe UI", Tahoma, sans-serif;
 }
 
+/* Navigasi dan header dipakai bersama seluruh halaman. */
 nav {
     position: sticky;
     top: 0;
@@ -110,6 +112,7 @@ main > p {
     color: var(--muted);
 }
 
+/* Ringkasan beranda dan tabel data. */
 .summary-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -202,6 +205,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .badge-active { color: #315b77; background: #e8f0f6; }
 .badge-pending { color: #76520a; background: #fff3d4; }
 
+/* Form, kontrol, dan tombol aksi. */
 main > form {
     max-width: 640px;
     margin: 0 auto 36px;
@@ -274,6 +278,7 @@ button:hover,
 .alert-success { color: var(--brand-dark); background: var(--success-bg); }
 .alert-danger { color: #7d3029; background: var(--danger-bg); }
 
+/* Navigasi halaman dan footer. */
 .pagination {
     display: flex;
     flex-wrap: wrap;
@@ -307,6 +312,7 @@ footer {
 
 footer p { margin: 0; }
 
+/* Susun ulang navigasi, ringkasan, dan form pada layar kecil. */
 @media (max-width: 800px) {
     nav { align-items: flex-start; flex-direction: column; gap: 0; padding: 0 20px; }
     .brand { padding-bottom: 8px; }

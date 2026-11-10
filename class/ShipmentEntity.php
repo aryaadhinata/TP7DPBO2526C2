@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/BaseEntity.php';
 
+/** Data transaksi beserta label relasi untuk tampilan tabel. */
 class ShipmentEntity extends BaseEntity {
     private int $shipId = 0;
     private int $cargoId = 0;

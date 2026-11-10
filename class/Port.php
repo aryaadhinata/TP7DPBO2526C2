@@ -2,6 +2,7 @@
 require_once __DIR__ . '/BaseModel.php';
 require_once __DIR__ . '/PortEntity.php';
 
+/** Akses CRUD pelabuhan dan aturan pengenalan negara asal domestik. */
 class Port extends BaseModel {
     /** Pelabuhan "dalam negeri" = pelabuhan dengan negara ini (dipakai aturan ekspor/impor). */
     const DOMESTIC_COUNTRY = 'Indonesia';

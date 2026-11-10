@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/BaseEntity.php';
 
+/** Data pelabuhan; validasi format dilakukan sebelum model menyimpan perubahan. */
 class PortEntity extends BaseEntity {
     private string $name = '';
     private string $country = '';

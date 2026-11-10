@@ -23,6 +23,7 @@ abstract class BaseController {
     public function handle(): array {
         $entity = $this->newEntity();
 
+        // POST menjalankan aksi; GET dengan action=edit mengisi form dari data yang tersimpan.
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $entity = $this->handlePost($entity);
         } elseif (($this->queryString('action') === 'edit')) {
@@ -38,10 +39,12 @@ abstract class BaseController {
         $total   = $this->model->countAll();
         $this->capture();
         $pages   = max(1, (int)ceil($total / $perPage));
+        // Pastikan nomor halaman selalu berada di rentang yang tersedia.
         $current = min(max(1, (int)($this->queryString('p') ?: 1)), $pages);
         $rows    = $this->model->getAll($perPage, ($current - 1) * $perPage);
         $this->capture();
 
+        // Data umum dipakai semua view; subclass menambahkan kebutuhan khusus seperti opsi dropdown.
         return [
             'slug'       => $this->slug(),
             'rows'       => $rows,
@@ -56,6 +59,7 @@ abstract class BaseController {
     }
 
     private function handlePost(BaseEntity $entity): BaseEntity {
+        // Verifikasi sesi sebelum menerima permintaan yang dapat mengubah data.
         if (!csrf_verify($_POST['csrf_token'] ?? null)) {
             $this->error = 'Sesi formulir tidak valid atau kedaluwarsa. Muat ulang halaman lalu coba lagi.';
             return $entity;

@@ -2,6 +2,7 @@
 require_once __DIR__ . '/BaseModel.php';
 require_once __DIR__ . '/ShipEntity.php';
 
+/** Akses CRUD kapal, termasuk pemeriksaan kapasitas terhadap muatan transaksi. */
 class Ship extends BaseModel {
     protected array $uniqueLabels = ['imo_number' => 'Nomor IMO'];
     protected string $inUseMessage = 'Kapal tidak dapat dihapus karena sudah dipakai pada transaksi.';

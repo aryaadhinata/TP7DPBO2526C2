@@ -19,7 +19,7 @@ class Shipment extends BaseModel {
         if (!isset(self::$enums[$column])) {
             $rows = $this->fetchAll(
                 "SELECT COLUMN_NAME, COLUMN_TYPE FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'shipments' AND COLUMN_NAME IN ('type', 'status')"
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'shipments' AND COLUMN_NAME IN ('type', 'status')"
             );
             foreach ($rows as $r) {
                 if (preg_match_all("/'((?:[^']|'')*)'/", $r['COLUMN_TYPE'], $m)) {
@@ -36,12 +36,12 @@ class Shipment extends BaseModel {
             "SELECT sp.*, sh.name AS ship_name, c.name AS cargo_name,
                     CONCAT(po.name, ', ', po.country) AS origin_port_label,
                     CONCAT(pd.name, ', ', pd.country) AS destination_port_label
-             FROM shipments sp
-             JOIN ships sh ON sp.ship_id = sh.id
-             JOIN cargos c ON sp.cargo_id = c.id
-             JOIN ports po ON sp.origin_port_id = po.id
-             JOIN ports pd ON sp.destination_port_id = pd.id
-             ORDER BY sp.shipment_date DESC, sp.id DESC" . $this->limitClause($limit, $offset)
+            FROM shipments sp
+            JOIN ships sh ON sp.ship_id = sh.id
+            JOIN cargos c ON sp.cargo_id = c.id
+            JOIN ports po ON sp.origin_port_id = po.id
+            JOIN ports pd ON sp.destination_port_id = pd.id
+            ORDER BY sp.shipment_date DESC, sp.id DESC" . $this->limitClause($limit, $offset)
         );
         return array_map([ShipmentEntity::class, 'fromArray'], $rows);
     }
@@ -70,7 +70,7 @@ class Shipment extends BaseModel {
 
         return $this->execute(
             "INSERT INTO shipments (ship_id, cargo_id, type, origin_port_id, destination_port_id, quantity_ton, shipment_date, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             $this->params($entity)
         ) !== false;
     }
@@ -81,9 +81,9 @@ class Shipment extends BaseModel {
 
         return $this->executeExisting(
             "UPDATE shipments
-             SET ship_id = ?, cargo_id = ?, type = ?, origin_port_id = ?, destination_port_id = ?,
-                 quantity_ton = ?, shipment_date = ?, status = ?
-             WHERE id = ?",
+            SET ship_id = ?, cargo_id = ?, type = ?, origin_port_id = ?, destination_port_id = ?,
+                quantity_ton = ?, shipment_date = ?, status = ?
+            WHERE id = ?",
             array_merge($this->params($entity), [$entity->getId()])
         );
     }
