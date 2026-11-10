@@ -1,75 +1,67 @@
 <?php
 require_once __DIR__ . '/BaseModel.php';
+require_once __DIR__ . '/ShipEntity.php';
 
 class Ship extends BaseModel {
+    protected array $uniqueLabels = ['imo_number' => 'Nomor IMO'];
+    protected string $inUseMessage = 'Kapal tidak dapat dihapus karena sudah dipakai pada transaksi.';
+    protected string $notFoundMessage = 'Data kapal tidak ditemukan.';
 
-    public function getAll() {
-        return $this->fetchAll("SELECT * FROM ships ORDER BY id DESC");
+    public function getAll(int $limit = 10, int $offset = 0): array {
+        $rows = $this->fetchAll("SELECT * FROM ships ORDER BY id DESC" . $this->limitClause($limit, $offset));
+        return array_map([ShipEntity::class, 'fromArray'], $rows);
     }
 
-    public function getById($id) {
-        return $this->fetchOne("SELECT * FROM ships WHERE id = ?", [$this->toId($id)]);
+    /** Daftar ringkas untuk dropdown (diurutkan per nama, dibatasi agar tetap ringan). */
+    public function getOptions(int $limit = 500): array {
+        $rows = $this->fetchAll("SELECT * FROM ships ORDER BY name" . $this->limitClause($limit, 0));
+        return array_map([ShipEntity::class, 'fromArray'], $rows);
     }
 
-    public function create($name, $imo, $flag, $capacity) {
-        $name = $this->clean($name);
-        $imo = $this->clean($imo);
-        $flag = $this->clean($flag);
-        $capacity = $this->clean($capacity);
+    public function countAll(): int {
+        $row = $this->fetchOne("SELECT COUNT(*) AS total FROM ships");
+        return $row ? (int)$row['total'] : 0;
+    }
 
-        if (!$this->validate($name, $imo, $flag, $capacity)) {
-            return false;
-        }
+    public function getById($id): ?ShipEntity {
+        $row = $this->fetchOne("SELECT * FROM ships WHERE id = ?", [$this->toId($id)]);
+        return $row ? ShipEntity::fromArray($row) : null;
+    }
+
+    public function create($entity): bool {
+        $this->assertEntity($entity, ShipEntity::class);
+        if (($this->error = $entity->validate()) !== '') return false;
+
         return $this->execute(
             "INSERT INTO ships (name, imo_number, flag_country, capacity_teu) VALUES (?, ?, ?, ?)",
-            [$name, $imo, $flag, (int)$capacity]
-        );
+            [$entity->getName(), $entity->getImoNumber(), $entity->getFlagCountry(), $entity->getCapacityTeu()]
+        ) !== false;
     }
 
-    public function update($id, $name, $imo, $flag, $capacity) {
-        $id = $this->toId($id);
-        $name = $this->clean($name);
-        $imo = $this->clean($imo);
-        $flag = $this->clean($flag);
-        $capacity = $this->clean($capacity);
+    public function update($entity): bool {
+        $this->assertEntity($entity, ShipEntity::class);
+        if (($this->error = $entity->validate()) !== '') return false;
 
-        if (!$this->validate($name, $imo, $flag, $capacity)) {
+        // Kapasitas baru tidak boleh lebih kecil dari muatan transaksi yang sudah ada
+        $maxTon = $entity->getCapacityTeu() * ShipEntity::MAX_TON_PER_TEU;
+        $row = $this->fetchOne(
+            "SELECT COUNT(*) AS total FROM shipments WHERE ship_id = ? AND quantity_ton > ?",
+            [$entity->getId(), $maxTon]
+        );
+        if ($row && (int)$row['total'] > 0) {
+            $this->error = 'Kapasitas terlalu kecil: ada transaksi kapal ini dengan muatan melebihi '
+                . $maxTon . ' ton.';
             return false;
         }
-        if ($this->getById($id) === null) {
-            $this->error = 'Data kapal tidak ditemukan.';
-            return false;
-        }
-        return $this->execute(
+        if ($this->error !== '') return false;
+
+        return $this->executeExisting(
             "UPDATE ships SET name = ?, imo_number = ?, flag_country = ?, capacity_teu = ? WHERE id = ?",
-            [$name, $imo, $flag, (int)$capacity, $id]
+            [$entity->getName(), $entity->getImoNumber(), $entity->getFlagCountry(), $entity->getCapacityTeu(), $entity->getId()]
         );
     }
 
-    public function delete($id) {
-        $id = $this->toId($id);
-        if ($this->getById($id) === null) {
-            $this->error = 'Data kapal tidak ditemukan.';
-            return false;
-        }
-        return $this->execute("DELETE FROM ships WHERE id = ?", [$id]);
-    }
-
-    private function validate($name, $imo, $flag, $capacity) {
-        $this->error = '';
-        if ($name === '' || $flag === '') {
-            $this->error = 'Nama kapal dan negara bendera wajib diisi.';
-            return false;
-        }
-        if (!preg_match('/^\d{7}$/', $imo)) {
-            $this->error = 'Nomor IMO harus terdiri dari 7 digit angka.';
-            return false;
-        }
-        if (!ctype_digit($capacity) || (int)$capacity <= 0) {
-            $this->error = 'Kapasitas (TEU) harus bilangan bulat positif.';
-            return false;
-        }
-        return true;
+    public function delete($id): bool {
+        return $this->executeExisting("DELETE FROM ships WHERE id = ?", [$this->toId($id)]);
     }
 }
-?>

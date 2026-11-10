@@ -1,116 +1,156 @@
 <?php
 require_once __DIR__ . '/BaseModel.php';
+require_once __DIR__ . '/Port.php';
+require_once __DIR__ . '/ShipmentEntity.php';
+require_once __DIR__ . '/ShipEntity.php';
 
 class Shipment extends BaseModel {
-    const TYPES = ['Ekspor', 'Impor'];
-    const STATUSES = ['Menunggu', 'Dalam Pelayaran', 'Tiba', 'Selesai'];
+    const TYPE_EXPORT = 'Ekspor';
+    const TYPE_IMPORT = 'Impor';
+    const STATUS_PENDING = 'Menunggu';
 
-    // Relasi: shipments -> ships dan shipments -> cargos
-    public function getAll() {
-        return $this->fetchAll(
-            "SELECT sp.*, sh.name AS ship_name, c.name AS cargo_name
-            FROM shipments sp
-            JOIN ships sh ON sp.ship_id = sh.id
-            JOIN cargos c ON sp.cargo_id = c.id
-            ORDER BY sp.shipment_date DESC, sp.id DESC"
+    protected string $notFoundMessage = 'Data transaksi tidak ditemukan.';
+
+    // Cache nilai ENUM per proses; sumber kebenarannya adalah skema database.
+    private static array $enums = [];
+
+    /** Nilai ENUM kolom `type` / `status`, dibaca dari skema agar tidak ditulis dua kali. */
+    public function enumValues(string $column): array {
+        if (!isset(self::$enums[$column])) {
+            $rows = $this->fetchAll(
+                "SELECT COLUMN_NAME, COLUMN_TYPE FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'shipments' AND COLUMN_NAME IN ('type', 'status')"
+            );
+            foreach ($rows as $r) {
+                if (preg_match_all("/'((?:[^']|'')*)'/", $r['COLUMN_TYPE'], $m)) {
+                    self::$enums[$r['COLUMN_NAME']] = array_map(fn($v) => str_replace("''", "'", $v), $m[1]);
+                }
+            }
+        }
+        return self::$enums[$column] ?? [];
+    }
+
+    // Relasi: shipments -> ships, cargos, dan ports (asal + tujuan)
+    public function getAll(int $limit = 10, int $offset = 0): array {
+        $rows = $this->fetchAll(
+            "SELECT sp.*, sh.name AS ship_name, c.name AS cargo_name,
+                    CONCAT(po.name, ', ', po.country) AS origin_port_label,
+                    CONCAT(pd.name, ', ', pd.country) AS destination_port_label
+             FROM shipments sp
+             JOIN ships sh ON sp.ship_id = sh.id
+             JOIN cargos c ON sp.cargo_id = c.id
+             JOIN ports po ON sp.origin_port_id = po.id
+             JOIN ports pd ON sp.destination_port_id = pd.id
+             ORDER BY sp.shipment_date DESC, sp.id DESC" . $this->limitClause($limit, $offset)
         );
+        return array_map([ShipmentEntity::class, 'fromArray'], $rows);
     }
 
-    public function getById($id) {
-        return $this->fetchOne("SELECT * FROM shipments WHERE id = ?", [$this->toId($id)]);
+    public function countAll(): int {
+        $row = $this->fetchOne("SELECT COUNT(*) AS total FROM shipments");
+        return $row ? (int)$row['total'] : 0;
     }
 
-    public function create($shipId, $cargoId, $type, $origin, $destination, $quantity, $date, $status) {
-        $data = $this->normalize($shipId, $cargoId, $type, $origin, $destination, $quantity, $date, $status);
-        if (!$this->validate($data)) {
-            return false;
+    public function countByType(string $type): int {
+        if (!in_array($type, [self::TYPE_EXPORT, self::TYPE_IMPORT], true)) {
+            return 0;
         }
+        $row = $this->fetchOne("SELECT COUNT(*) AS total FROM shipments WHERE type = ?", [$type]);
+        return $row ? (int)$row['total'] : 0;
+    }
+
+    public function getById($id): ?ShipmentEntity {
+        $row = $this->fetchOne("SELECT * FROM shipments WHERE id = ?", [$this->toId($id)]);
+        return $row ? ShipmentEntity::fromArray($row) : null;
+    }
+
+    public function create($entity): bool {
+        $this->assertEntity($entity, ShipmentEntity::class);
+        if (!$this->validateAll($entity)) return false;
+
         return $this->execute(
-            "INSERT INTO shipments (ship_id, cargo_id, type, origin_port, destination_port, quantity_ton, shipment_date, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            [
-                $data['ship_id'], $data['cargo_id'], $data['type'], $data['origin'],
-                $data['destination'], $data['quantity'], $data['date'], $data['status']
-            ]
-        );
+            "INSERT INTO shipments (ship_id, cargo_id, type, origin_port_id, destination_port_id, quantity_ton, shipment_date, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            $this->params($entity)
+        ) !== false;
     }
 
-    public function update($id, $shipId, $cargoId, $type, $origin, $destination, $quantity, $date, $status) {
-        $id = $this->toId($id);
-        $data = $this->normalize($shipId, $cargoId, $type, $origin, $destination, $quantity, $date, $status);
-        if (!$this->validate($data)) {
-            return false;
-        }
-        if ($this->getById($id) === null) {
-            $this->error = 'Data transaksi tidak ditemukan.';
-            return false;
-        }
-        return $this->execute(
+    public function update($entity): bool {
+        $this->assertEntity($entity, ShipmentEntity::class);
+        if (!$this->validateAll($entity)) return false;
+
+        return $this->executeExisting(
             "UPDATE shipments
-            SET ship_id = ?, cargo_id = ?, type = ?, origin_port = ?, destination_port = ?,
-                quantity_ton = ?, shipment_date = ?, status = ?
-            WHERE id = ?",
-            [
-                $data['ship_id'], $data['cargo_id'], $data['type'], $data['origin'],
-                $data['destination'], $data['quantity'], $data['date'], $data['status'], $id
-            ]
+             SET ship_id = ?, cargo_id = ?, type = ?, origin_port_id = ?, destination_port_id = ?,
+                 quantity_ton = ?, shipment_date = ?, status = ?
+             WHERE id = ?",
+            array_merge($this->params($entity), [$entity->getId()])
         );
     }
 
-    public function delete($id) {
-        $id = $this->toId($id);
-        if ($this->getById($id) === null) {
-            $this->error = 'Data transaksi tidak ditemukan.';
-            return false;
-        }
-        return $this->execute("DELETE FROM shipments WHERE id = ?", [$id]);
+    public function delete($id): bool {
+        return $this->executeExisting("DELETE FROM shipments WHERE id = ?", [$this->toId($id)]);
     }
 
-    private function normalize($shipId, $cargoId, $type, $origin, $destination, $quantity, $date, $status) {
+    private function params(ShipmentEntity $e): array {
         return [
-            'ship_id'     => $this->toId($shipId),
-            'cargo_id'    => $this->toId($cargoId),
-            'type'        => $this->clean($type),
-            'origin'      => $this->clean($origin),
-            'destination' => $this->clean($destination),
-            'quantity'    => $this->clean($quantity),
-            'date'        => $this->clean($date),
-            'status'      => $this->clean($status),
+            $e->getShipId(), $e->getCargoId(), $e->getType(), $e->getOriginPortId(),
+            $e->getDestinationPortId(), $e->getQuantityTon(), $e->getShipmentDate(), $e->getStatus(),
         ];
     }
 
-    private function validate($d) {
-        $this->error = '';
-        if ($d['ship_id'] <= 0 || $d['cargo_id'] <= 0) {
-            $this->error = 'Kapal dan barang wajib dipilih.';
+    /** Validasi format (entity) + nilai ENUM + aturan bisnis yang butuh data dari database. */
+    private function validateAll(ShipmentEntity $e): bool {
+        if (($this->error = $e->validate()) !== '') return false;
+
+        if (!in_array($e->getType(), $this->enumValues('type'), true)) {
+            // pesan galat database (jika enumValues gagal) tetap dipertahankan
+            $this->error = $this->error ?: 'Jenis transaksi tidak valid.';
             return false;
         }
-        if (!in_array($d['type'], self::TYPES, true)) {
-            $this->error = 'Jenis transaksi harus Ekspor atau Impor.';
+        if (!in_array($e->getStatus(), $this->enumValues('status'), true)) {
+            $this->error = $this->error ?: 'Status pengiriman tidak valid.';
             return false;
         }
-        if (!in_array($d['status'], self::STATUSES, true)) {
-            $this->error = 'Status pengiriman tidak valid.';
-            return false;
+
+        $ship  = $this->fetchOne("SELECT capacity_teu FROM ships WHERE id = ?", [$e->getShipId()]);
+        $cargo = $this->fetchOne("SELECT id FROM cargos WHERE id = ?", [$e->getCargoId()]);
+        $origin = $this->fetchOne("SELECT country FROM ports WHERE id = ?", [$e->getOriginPortId()]);
+        $dest   = $this->fetchOne("SELECT country FROM ports WHERE id = ?", [$e->getDestinationPortId()]);
+        if ($this->error !== '') return false; // kegagalan database pada salah satu SELECT di atas
+
+        if (!$ship)   return $this->reject('Kapal yang dipilih tidak ditemukan.');
+        if (!$cargo)  return $this->reject('Barang yang dipilih tidak ditemukan.');
+        if (!$origin || !$dest) return $this->reject('Pelabuhan yang dipilih tidak ditemukan.');
+
+        // Aturan ekspor/impor terhadap pelabuhan dalam negeri
+        $originLocal = Port::isDomestic($origin['country']);
+        $destLocal   = Port::isDomestic($dest['country']);
+        $domestic    = Port::DOMESTIC_COUNTRY;
+        if ($e->getType() === self::TYPE_EXPORT && !($originLocal && !$destLocal)) {
+            return $this->reject("Ekspor harus berangkat dari pelabuhan $domestic dan menuju pelabuhan luar negeri.");
         }
-        if ($d['origin'] === '' || $d['destination'] === '') {
-            $this->error = 'Pelabuhan asal dan tujuan wajib diisi.';
-            return false;
+        if ($e->getType() === self::TYPE_IMPORT && !(!$originLocal && $destLocal)) {
+            return $this->reject("Impor harus berangkat dari pelabuhan luar negeri dan tiba di pelabuhan $domestic.");
         }
-        if (strcasecmp($d['origin'], $d['destination']) === 0) {
-            $this->error = 'Pelabuhan asal dan tujuan tidak boleh sama.';
-            return false;
+
+        // Satuan: kapasitas kapal (TEU) vs muatan (ton)
+        $maxTon = (int)$ship['capacity_teu'] * ShipEntity::MAX_TON_PER_TEU;
+        if ((float)$e->getQuantityTon() > $maxTon) {
+            return $this->reject("Muatan melebihi daya angkut kapal (maks. $maxTon ton = {$ship['capacity_teu']} TEU × "
+                . ShipEntity::MAX_TON_PER_TEU . ' ton/TEU).');
         }
-        if (!is_numeric($d['quantity']) || (float)$d['quantity'] <= 0 || (float)$d['quantity'] > 99999999.99) {
-            $this->error = 'Jumlah muatan (ton) harus angka lebih dari 0.';
-            return false;
-        }
-        $date = DateTime::createFromFormat('Y-m-d', $d['date']);
-        if (!$date || $date->format('Y-m-d') !== $d['date']) {
-            $this->error = 'Tanggal pengiriman tidak valid.';
-            return false;
+
+        // Tanggal harus cocok dengan status: pengiriman yang sudah berlayar/tiba/selesai tidak boleh berdatum masa depan
+        $today = (new DateTimeImmutable('today'))->format('Y-m-d');
+        if ($e->getStatus() !== self::STATUS_PENDING && $e->getShipmentDate() > $today) {
+            return $this->reject('Tanggal pengiriman di masa depan hanya boleh berstatus "' . self::STATUS_PENDING . '".');
         }
         return true;
     }
+
+    private function reject(string $message): bool {
+        $this->error = $message;
+        return false;
+    }
 }
-?>

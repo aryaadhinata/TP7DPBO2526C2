@@ -1,69 +1,53 @@
 <?php
 require_once __DIR__ . '/BaseModel.php';
+require_once __DIR__ . '/CargoEntity.php';
 
 class Cargo extends BaseModel {
+    protected array $uniqueLabels = ['hs_code' => 'Kode HS'];
+    protected string $inUseMessage = 'Barang tidak dapat dihapus karena sudah dipakai pada transaksi.';
+    protected string $notFoundMessage = 'Data barang tidak ditemukan.';
 
-    public function getAll() {
-        return $this->fetchAll("SELECT * FROM cargos ORDER BY id DESC");
+    public function getAll(int $limit = 10, int $offset = 0): array {
+        $rows = $this->fetchAll("SELECT * FROM cargos ORDER BY id DESC" . $this->limitClause($limit, $offset));
+        return array_map([CargoEntity::class, 'fromArray'], $rows);
     }
 
-    public function getById($id) {
-        return $this->fetchOne("SELECT * FROM cargos WHERE id = ?", [$this->toId($id)]);
+    public function getOptions(int $limit = 500): array {
+        $rows = $this->fetchAll("SELECT * FROM cargos ORDER BY name" . $this->limitClause($limit, 0));
+        return array_map([CargoEntity::class, 'fromArray'], $rows);
     }
 
-    public function create($name, $hsCode, $category) {
-        $name = $this->clean($name);
-        $hsCode = $this->clean($hsCode);
-        $category = $this->clean($category);
+    public function countAll(): int {
+        $row = $this->fetchOne("SELECT COUNT(*) AS total FROM cargos");
+        return $row ? (int)$row['total'] : 0;
+    }
 
-        if (!$this->validate($name, $hsCode, $category)) {
-            return false;
-        }
+    public function getById($id): ?CargoEntity {
+        $row = $this->fetchOne("SELECT * FROM cargos WHERE id = ?", [$this->toId($id)]);
+        return $row ? CargoEntity::fromArray($row) : null;
+    }
+
+    public function create($entity): bool {
+        $this->assertEntity($entity, CargoEntity::class);
+        if (($this->error = $entity->validate()) !== '') return false;
+
         return $this->execute(
             "INSERT INTO cargos (name, hs_code, category) VALUES (?, ?, ?)",
-            [$name, $hsCode, $category]
-        );
+            [$entity->getName(), $entity->getHsCode(), $entity->getCategory()]
+        ) !== false;
     }
 
-    public function update($id, $name, $hsCode, $category) {
-        $id = $this->toId($id);
-        $name = $this->clean($name);
-        $hsCode = $this->clean($hsCode);
-        $category = $this->clean($category);
+    public function update($entity): bool {
+        $this->assertEntity($entity, CargoEntity::class);
+        if (($this->error = $entity->validate()) !== '') return false;
 
-        if (!$this->validate($name, $hsCode, $category)) {
-            return false;
-        }
-        if ($this->getById($id) === null) {
-            $this->error = 'Data barang tidak ditemukan.';
-            return false;
-        }
-        return $this->execute(
+        return $this->executeExisting(
             "UPDATE cargos SET name = ?, hs_code = ?, category = ? WHERE id = ?",
-            [$name, $hsCode, $category, $id]
+            [$entity->getName(), $entity->getHsCode(), $entity->getCategory(), $entity->getId()]
         );
     }
 
-    public function delete($id) {
-        $id = $this->toId($id);
-        if ($this->getById($id) === null) {
-            $this->error = 'Data barang tidak ditemukan.';
-            return false;
-        }
-        return $this->execute("DELETE FROM cargos WHERE id = ?", [$id]);
-    }
-
-    private function validate($name, $hsCode, $category) {
-        $this->error = '';
-        if ($name === '' || $category === '') {
-            $this->error = 'Nama barang dan kategori wajib diisi.';
-            return false;
-        }
-        if (!preg_match('/^\d{6,10}$/', $hsCode)) {
-            $this->error = 'Kode HS harus terdiri dari 6 sampai 10 digit angka.';
-            return false;
-        }
-        return true;
+    public function delete($id): bool {
+        return $this->executeExisting("DELETE FROM cargos WHERE id = ?", [$this->toId($id)]);
     }
 }
-?>
