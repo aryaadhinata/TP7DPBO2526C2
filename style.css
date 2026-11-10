@@ -206,12 +206,29 @@ tbody tr:last-child td { border-bottom: 0; }
 .badge-pending { color: #76520a; background: #fff3d4; }
 
 /* Form, kontrol, dan tombol aksi. */
-main > form {
+.form-panel {
     max-width: 640px;
-    margin: 0 auto 36px;
-    padding: 20px;
+    margin: 32px auto 36px;
     background: var(--surface);
     border: 1px solid var(--line);
+}
+
+.form-panel summary {
+    padding: 14px 18px;
+    color: var(--brand-dark);
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.form-panel[open] > summary {
+    border-bottom: 1px solid var(--line);
+}
+
+.form-panel > form {
+    max-width: none;
+    margin: 0;
+    padding: 20px;
+    border: 0;
 }
 
 label {
@@ -326,6 +343,6 @@ footer p { margin: 0; }
     header h1 { font-size: 1.6rem; }
     main { width: min(100% - 28px, 1160px); padding: 26px 0 36px; }
     .feature-grid { grid-template-columns: 1fr; }
-    main > form { padding: 16px; }
+    .form-panel > form { padding: 16px; }
     .pagination .total { width: 100%; margin-left: 0; }
 }

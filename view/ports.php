@@ -3,7 +3,9 @@
 /** @var string $slug */
 /** @var PortEntity[] $rows */
 /** @var array $pagination */
+/** @var string $error */
 $isEdit = $entity->getId() > 0;
+$formOpen = $isEdit || $error !== '';
 ?>
 <h3>Daftar Pelabuhan</h3>
 <?php
@@ -18,8 +20,10 @@ render_view('table', [
 render_view('pagination', ['slug' => $slug, 'pagination' => $pagination]);
 ?>
 
-<h3><?= $isEdit ? 'Ubah Pelabuhan' : 'Tambah Pelabuhan' ?></h3>
+<details class="form-panel"<?= $formOpen ? ' open' : '' ?>>
+    <summary><?= $isEdit ? 'Ubah Pelabuhan' : 'Tambah Pelabuhan' ?></summary>
 <?= form_open($slug, $isEdit, $entity->getId()) ?>
     <?= input_field('name', 'Nama Pelabuhan', $entity->getName(), ['maxlength' => 100, 'required' => true]) ?>
     <?= input_field('country', 'Negara (pelabuhan "' . Port::DOMESTIC_COUNTRY . '" dianggap dalam negeri)', $entity->getCountry(), ['maxlength' => 60, 'required' => true]) ?>
 <?= form_close($slug, $isEdit) ?>
+</details>

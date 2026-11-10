@@ -3,12 +3,14 @@
 /** @var string $slug */
 /** @var ShipmentEntity[] $rows */
 /** @var array $pagination */
+/** @var string $error */
 /** @var array $shipOptions */
 /** @var array $cargoOptions */
 /** @var array $portOptions */
 /** @var array $typeOptions */
 /** @var array $statusOptions */
 $isEdit = $entity->getId() > 0;
+$formOpen = $isEdit || $error !== '';
 ?>
 <h3>Daftar Transaksi Ekspor / Impor</h3>
 <?php
@@ -37,7 +39,8 @@ render_view('table', [
 render_view('pagination', ['slug' => $slug, 'pagination' => $pagination]);
 ?>
 
-<h3><?= $isEdit ? 'Ubah Transaksi' : 'Tambah Transaksi' ?></h3>
+<details class="form-panel"<?= $formOpen ? ' open' : '' ?>>
+    <summary><?= $isEdit ? 'Ubah Transaksi' : 'Tambah Transaksi' ?></summary>
 <?= form_open($slug, $isEdit, $entity->getId()) ?>
     <?= select_field('ship_id', 'Kapal', $shipOptions, $entity->getShipId(), '-- Pilih kapal --') ?>
     <?= select_field('cargo_id', 'Barang', $cargoOptions, $entity->getCargoId(), '-- Pilih barang --') ?>
@@ -48,3 +51,4 @@ render_view('pagination', ['slug' => $slug, 'pagination' => $pagination]);
     <?= input_field('shipment_date', 'Tanggal Pengiriman', $entity->getShipmentDate(), ['required' => true], 'date') ?>
     <?= select_field('status', 'Status', $statusOptions, $entity->getStatus()) ?>
 <?= form_close($slug, $isEdit) ?>
+</details>

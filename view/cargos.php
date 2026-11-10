@@ -3,7 +3,9 @@
 /** @var string $slug */
 /** @var CargoEntity[] $rows */
 /** @var array $pagination */
+/** @var string $error */
 $isEdit = $entity->getId() > 0;
+$formOpen = $isEdit || $error !== '';
 ?>
 <h3>Daftar Barang</h3>
 <?php
@@ -19,9 +21,11 @@ render_view('table', [
 render_view('pagination', ['slug' => $slug, 'pagination' => $pagination]);
 ?>
 
-<h3><?= $isEdit ? 'Ubah Barang' : 'Tambah Barang' ?></h3>
+<details class="form-panel"<?= $formOpen ? ' open' : '' ?>>
+    <summary><?= $isEdit ? 'Ubah Barang' : 'Tambah Barang' ?></summary>
 <?= form_open($slug, $isEdit, $entity->getId()) ?>
     <?= input_field('name', 'Nama Barang', $entity->getName(), ['maxlength' => 100, 'required' => true]) ?>
     <?= input_field('hs_code', 'Kode HS (6-10 digit)', $entity->getHsCode(), ['maxlength' => 10, 'pattern' => '\d{6,10}', 'required' => true]) ?>
     <?= input_field('category', 'Kategori', $entity->getCategory(), ['maxlength' => 50, 'required' => true]) ?>
 <?= form_close($slug, $isEdit) ?>
+</details>
